@@ -1,10 +1,20 @@
-import type { MetaFunction } from "@remix-run/node";
+import { redirect, type LoaderFunction, type MetaFunction } from "@remix-run/node";
+import { authenticator } from "~/utils/asgardeo.server";
 
 export const meta: MetaFunction = () => {
   return [
     { title: "New Remix App" },
     { name: "description", content: "Welcome to Remix!" },
   ];
+};
+
+export let loader: LoaderFunction = async ({ request }) => {
+  const user = await authenticator.isAuthenticated(request);
+  console.log("User: ", user);
+  if (!user) {
+    return redirect("/login");
+  }
+  return null;
 };
 
 export default function Index() {
