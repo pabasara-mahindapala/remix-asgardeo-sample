@@ -1,5 +1,5 @@
 import { redirect, type LoaderFunction, type MetaFunction } from "@remix-run/node";
-import { Form } from "@remix-run/react";
+import { Form, useLoaderData } from "@remix-run/react";
 import { authenticator } from "~/utils/asgardeo.server";
 
 export const meta: MetaFunction = () => {
@@ -15,10 +15,12 @@ export let loader: LoaderFunction = async ({ request }) => {
   if (!isLoggedIn) {
     return redirect("/login");
   }
-  return null;
+  return { user };
 };
 
 export default function Index() {
+  const { user } = useLoaderData<typeof loader>();
+
   return (
     <div className="flex h-screen items-center justify-center">
       <div className="flex flex-col items-center gap-9">
@@ -41,23 +43,19 @@ export default function Index() {
         </header>
         <nav className="flex flex-col items-center justify-center gap-4 rounded-3xl border border-gray-200 p-6 dark:border-gray-700">
           <p className="leading-6 text-gray-700 dark:text-gray-200">
-            What&apos;s next?
+            User Profile
           </p>
-          <ul>
-            {resources.map(({ href, text, icon }) => (
-              <li key={href}>
-                <a
-                  className="group flex items-center gap-3 self-stretch p-3 leading-normal text-blue-700 hover:underline dark:text-blue-500"
-                  href={href}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {icon}
-                  {text}
-                </a>
-              </li>
-            ))}
-          </ul>
+          <div className="flex flex-col gap-3">
+            <p>
+              <strong>Email:</strong> {user?.email}
+            </p>
+            <p>
+              <strong>First Name:</strong> {user?.firstName}
+            </p>
+            <p>
+              <strong>Last Name:</strong> {user?.lastName}
+            </p>
+          </div>
         </nav>
         <div>
           <Form action="/auth/logout" method="post">

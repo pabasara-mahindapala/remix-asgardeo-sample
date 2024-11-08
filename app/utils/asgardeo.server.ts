@@ -2,7 +2,13 @@ import { Authenticator } from "remix-auth";
 import { AsgardeoStrategy } from "remix-auth-asgardeo";
 import { createCookieSessionStorage } from "@remix-run/node";
 
-type User = { id: string; username: string; };
+type User = {
+    id: string;
+    email: string;
+    username: string;
+    firstName: string;
+    lastName: string;
+};
 
 export let sessionStorage = createCookieSessionStorage({
     cookie: {
@@ -27,7 +33,9 @@ const asgardeoStrategy = new AsgardeoStrategy(
     async ({ accessToken, refreshToken, extraParams, profile }) => {
         return {
             id: profile.id,
-            username: profile?._json?.username ?? "",
+            email: profile?._json?.email ?? "",
+            firstName: profile._json?.given_name ?? "",
+            lastName: profile._json?.family_name ?? "",
         } as User;
     }
 );
