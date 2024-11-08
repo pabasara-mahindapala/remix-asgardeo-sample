@@ -1,4 +1,5 @@
 import { redirect, type LoaderFunction, type MetaFunction } from "@remix-run/node";
+import { Form } from "@remix-run/react";
 import { authenticator } from "~/utils/asgardeo.server";
 
 export const meta: MetaFunction = () => {
@@ -10,8 +11,8 @@ export const meta: MetaFunction = () => {
 
 export let loader: LoaderFunction = async ({ request }) => {
   const user = await authenticator.isAuthenticated(request);
-  console.log("User: ", user);
-  if (!user) {
+  const isLoggedIn = !!user;
+  if (!isLoggedIn) {
     return redirect("/login");
   }
   return null;
@@ -20,7 +21,7 @@ export let loader: LoaderFunction = async ({ request }) => {
 export default function Index() {
   return (
     <div className="flex h-screen items-center justify-center">
-      <div className="flex flex-col items-center gap-16">
+      <div className="flex flex-col items-center gap-9">
         <header className="flex flex-col items-center gap-9">
           <h1 className="leading text-2xl font-bold text-gray-800 dark:text-gray-100">
             Welcome to <span className="sr-only">Remix</span>
@@ -58,6 +59,11 @@ export default function Index() {
             ))}
           </ul>
         </nav>
+        <div>
+          <Form action="/auth/logout" method="post">
+            <button className="m-4 p-2 cursor-pointer border-2 rounded-lg">Logout</button>
+          </Form>
+        </div>
       </div>
     </div>
   );
