@@ -16,7 +16,8 @@ export let loader: LoaderFunction = async ({ request }) => {
   if (!isLoggedIn) {
     return redirect("/login");
   }
-  return { user };
+  const ASGARDEO_SCIM_ME_URL = process.env.ASGARDEO_SCIM_ME_URL;
+  return { user, ASGARDEO_SCIM_ME_URL };
 };
 
 interface UserDetails {
@@ -29,7 +30,7 @@ interface UserDetails {
 }
 
 export default function Index() {
-  const { user } = useLoaderData<typeof loader>();
+  const { user, ASGARDEO_SCIM_ME_URL } = useLoaderData<typeof loader>();
 
   const [scimUser, setScimUser] = useState<UserDetails>({} as UserDetails);
 
@@ -44,7 +45,7 @@ export default function Index() {
     }
 
     try {
-      fetch("https://api.asgardeo.io/t/pabasara/scim2/Me", {
+      fetch(ASGARDEO_SCIM_ME_URL , {
         method: 'GET',
         headers: {
           "Accept": "application/scim+json",
@@ -52,16 +53,11 @@ export default function Index() {
           "Authorization": `Bearer ${user?.accessToken}`,
         },
       }).then(async (response) => {
-        console.log("response: ", response);
-
         if (!response.ok) {
           throw new Error('Failed to fetch protected data');
         }
 
         const data = await response.json();
-
-        console.log("data: ", data);
-
         setScimUser(data);
       });
     } catch (error) {
