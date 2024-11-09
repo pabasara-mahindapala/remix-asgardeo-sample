@@ -8,6 +8,7 @@ type User = {
     username: string;
     firstName: string;
     lastName: string;
+    accessToken: string;
 };
 
 export let sessionStorage = createCookieSessionStorage({
@@ -29,6 +30,7 @@ const asgardeoStrategy = new AsgardeoStrategy(
         clientID: process.env.ASGARDEO_CLIENT_ID ?? "",
         clientSecret: process.env.ASGARDEO_CLIENT_SECRET ?? "",
         baseUrl: process.env.ASGARDEO_BASE_URL ?? "",
+        scope: "openid profile email internal_login",
     },
     async ({ accessToken, refreshToken, extraParams, profile }) => {
         return {
@@ -36,6 +38,7 @@ const asgardeoStrategy = new AsgardeoStrategy(
             email: profile?._json?.email ?? "",
             firstName: profile._json?.given_name ?? "",
             lastName: profile._json?.family_name ?? "",
+            accessToken: accessToken,
         } as User;
     }
 );
