@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { redirect, type LoaderFunction, type MetaFunction } from "@remix-run/node";
 import { Form, useLoaderData } from "@remix-run/react";
 import { authenticator } from "~/utils/asgardeo.server";
@@ -16,8 +15,34 @@ export let loader: LoaderFunction = async ({ request }) => {
   if (!isLoggedIn) {
     return redirect("/login");
   }
-  const ASGARDEO_SCIM_ME_URL = process.env.ASGARDEO_SCIM_ME_URL;
-  return { user, ASGARDEO_SCIM_ME_URL };
+
+  let userDetails = {} as UserDetails;
+
+  if (!user?.accessToken) {
+    console.error('Access token not found');
+    return { userDetails };
+  }
+
+  try {
+    const response = await fetch(process.env.ASGARDEO_SCIM_ME_URL as string, {
+      method: 'GET',
+      headers: {
+        "Accept": "application/scim+json",
+        "Content-Type": "application/scim+json",
+        "Authorization": `Bearer ${user?.accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch protected data');
+    }
+
+    userDetails = await response.json();
+    return { userDetails };
+  } catch (error) {
+    console.error('Error fetching protected data:', error);
+    return { userDetails };
+  }
 };
 
 interface UserDetails {
@@ -30,45 +55,12 @@ interface UserDetails {
 }
 
 export default function Index() {
-  const { user, ASGARDEO_SCIM_ME_URL } = useLoaderData<typeof loader>();
+  const { userDetails } = useLoaderData<typeof loader>();
 
-  const [scimUser, setScimUser] = useState<UserDetails>({} as UserDetails);
-
-  useEffect(() => {
-    fetchProtectedData();
-  }, []);
-
-  const fetchProtectedData = async () => {
-    if (!user?.accessToken) {
-      console.error('Access token not found');
-      return;
-    }
-
-    try {
-      fetch(ASGARDEO_SCIM_ME_URL, {
-        method: 'GET',
-        headers: {
-          "Accept": "application/scim+json",
-          "Content-Type": "application/scim+json",
-          "Authorization": `Bearer ${user?.accessToken}`,
-        },
-      }).then(async (response) => {
-        if (!response.ok) {
-          throw new Error('Failed to fetch protected data');
-        }
-
-        const data = await response.json();
-        setScimUser(data);
-      });
-    } catch (error) {
-      console.error('Error fetching protected data:', error);
-    }
-  };
-
-  if (!user || !scimUser?.id) {
+  if (!userDetails || !userDetails?.id) {
     return (
       <div className="h-screen w-full flex items-center justify-center">
-        <h1>Loading</h1>
+        <h1>Failed to fetch user details. Check the console for more information.</h1>
       </div>
     );
   }
@@ -99,13 +91,13 @@ export default function Index() {
           </p>
           <div className="flex flex-col gap-3">
             <p>
-              <strong>Email:</strong> {scimUser?.emails ? scimUser.emails[0] : ''}
+              <strong>Email:</strong> {userDetails?.emails ? userDetails.emails[0] : ''}
             </p>
             <p>
-              <strong>First Name:</strong> {scimUser?.name?.givenName}
+              <strong>First Name:</strong> {userDetails?.name?.givenName}
             </p>
             <p>
-              <strong>Last Name:</strong> {scimUser?.name?.familyName}
+              <strong>Last Name:</strong> {userDetails?.name?.familyName}
             </p>
           </div>
         </nav>
